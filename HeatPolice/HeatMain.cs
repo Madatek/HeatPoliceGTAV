@@ -122,8 +122,16 @@ public class HeatCopCar
             //Have I been touched?
             this.CollisionCheck();
         }
+
+        if (status == "Incoming" || status == "Following")
+        {
+            if (violator.IsInRange(this.currentpos, 100))
+            {
+                this.StartChase(this.violator);
+            }
+        }
     }
-    private void setStatusNormal()
+    public void setStatusNormal()
     {
         //When being created or ending the chase
         this.driver.Task.CruiseWithVehicle(this.vehicle, 70);
@@ -194,7 +202,8 @@ public class HeatCopCar
                                     msg = "UNIT: Dispactch, someone has crashed into me, they are not stopping. Code 3.";
                                     if (this.StartChase(this.violator))
                                     {
-                                        return;
+                                        DispatchHandler.DispatchCops(this.violator, colleagues);
+                                        return;                                        
                                     }
                                     else
                                     {
@@ -257,8 +266,26 @@ public class HeatCopCar
     {
         if (!violator.IsInRange(currentpos, 500))
         {
-            msg = "UNIT: Lost sight of the suspect, dropping pursuit";
-            this.setStatusNormal();
+            msg = "UNIT: Lost sight of the suspect, does anyone see them?";
+            status = "Searching";
+            foreach (HeatCopCar cop in colleagues)
+            {
+                if (cop.violator == this.violator)
+                {
+                    if (cop.status == "Chase")
+                    {
+                        cop.msg = "UNIT: Yeah, I see them, follow me!";
+                        this.reachColleagues();
+                        this.status = "Following";
+                        return;
+                    }
+                    else
+                    {
+                        cop.msg = "UNIT: Negative, sorry";
+                    }
+                }
+            }
+            DispatchHandler.EndPursuit(violator, colleagues);
         }
     }
     private bool CheckAlive()
@@ -275,12 +302,43 @@ public class HeatCopCar
             return true;
         }
     }
+    public void reachColleagues()
+    {
+        foreach (HeatCopCar cop in colleagues)
+        {
+            if (cop.violator == this.violator && cop.status == "Chase")
+            {
+                msg = "UNIT: Roger, I'm going";
+                this.driver.Task.ChaseWithGroundVehicle(cop.driver);
+                return;
+            }
+        }
+    }
 }
 
 public static class DispatchHandler
 {
     public static void DispatchCops(Ped violator, List<HeatCopCar> list)
     {
-        
+        //Sends backup to units
+        foreach (HeatCopCar cop in list)
+        {
+            if (cop.violator == null || cop.violator == violator)
+            {
+                cop.violator = violator;
+                cop.violatorvehicle = violator.CurrentVehicle;
+                cop.status = "Incoming";
+                cop.reachColleagues();
+            }
+        }
+    }
+    public static void EndPursuit (Ped violator, List<HeatCopCar> list)
+    {
+        GTA.UI.Notification.Show("HeatPolice Message: DISPATCH: We lost the suspect, everyone resume patrol");
+        foreach (HeatCopCar cop in list)
+        {
+            if (cop.violator == violator)
+                cop.setStatusNormal();
+        }
     }
 }
