@@ -22,7 +22,6 @@ public class HeatPolice : Script
     // Where you initialize the events or do anything when the mod starts.
     public HeatPolice()
     {
-        
         Tick += OnTick;
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
@@ -38,7 +37,7 @@ public class HeatPolice : Script
             if (cop.status != "Mark for Removal")
             {
                 //If this cop is not going to be deleted
-                cop.OnTick();
+                cop.OnTick(HeatCopCars);
             }
             else
             {
@@ -76,6 +75,7 @@ public class HeatPolice : Script
 
 public class HeatCopCar
 {
+    public List<HeatCopCar> colleagues;
     public Ped driver;  //The pilot
     public Vehicle vehicle; //The car
     public Vehicle violatorvehicle; //the violator's car
@@ -95,9 +95,11 @@ public class HeatCopCar
         this.currentpos = this.vehicle.Position;
         this.setStatusNormal();
     }
-    public void OnTick()
+    public void OnTick(List<HeatCopCar> import)
         //The pulsating heart of the script, here, at every tick, we monitor if the cop is alive, its status, and, based on many parameters, what they have to do.
     {
+        colleagues = import;
+
         //if (!this.CheckAlive())
         //{
         //    //this cop has been marked for removal, leave the on tick immediately
@@ -137,7 +139,7 @@ public class HeatCopCar
         //Once I have an active violator, I start giving chase
         try
         {
-            msg = "DISPATCH: All units, we have an officer in code 3, the suspect is a " + violatorvehicle.ClassDisplayName + ". All available units please converge on position";
+            msg = "UNIT: In pursuit";
             this.driver.Task.ChaseWithGroundVehicle(violator);
         }
         catch
@@ -235,7 +237,7 @@ public class HeatCopCar
                 try
                 {
                     Game.Player.Money = 0;
-                    msg = "DISPATCH: suspect has been arrested. Confiscating money.";
+                    msg = "UNIT: Dispatch, we have the suspect.";
                 }
                 catch
                 {
@@ -264,7 +266,7 @@ public class HeatCopCar
     {
         if (driver.IsDead || !vehicle.IsDriveable)
         {
-            msg = "DISPATCH: Cop disabled or killed, will be removed";
+            msg = "UNIT: Can't continue to operate";
             this.Remove();
             return false;
         }
@@ -275,7 +277,10 @@ public class HeatCopCar
     }
 }
 
-public class DispatchHandler
+public static class DispatchHandler
 {
-    //This class will manage interactions between cops. maybe even their tactics?
+    public static void DispatchCops(Ped violator, List<HeatCopCar> list)
+    {
+        
+    }
 }
