@@ -337,7 +337,7 @@ public static class DispatchHandler
             }
         }
     }
-    public static void EndPursuit (Ped violator, List<HeatCopCar> list, string reason)
+    public static void EndPursuit(Ped violator, List<HeatCopCar> list, string reason)
     {
         try
         {
@@ -355,5 +355,6 @@ public static class DispatchHandler
             {
                 cop.setStatusNormal();
             }
+        }
     }
 }
