@@ -274,3 +274,8 @@ public class HeatCopCar
         }
     }
 }
+
+public class DispatchHandler
+{
+    //This class will manage interactions between cops. maybe even their tactics?
+}
