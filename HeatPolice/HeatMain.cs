@@ -133,13 +133,14 @@ public class HeatCopCar
     }
     public void setStatusNormal()
     {
+        this.status = "Normal";
         //When being created or ending the chase
         this.driver.Task.CruiseWithVehicle(this.vehicle, 70);
         this.vehicle.IsSirenActive = false;
         this.driver.DrivingStyle = DrivingStyle.Normal;
         this.violator = null;
         this.violatorvehicle = null;
-        this.status = "Normal";
+        
         msg = "UNIT: Resuming patrol";
     }
     private bool StartChase(Ped violator)
@@ -269,28 +270,35 @@ public class HeatCopCar
     }
     private void CheckEscaped()
     {
-        if (!violator.IsInRange(currentpos, 500))
+        try
         {
-            msg = "UNIT: Lost sight of the suspect, does anyone see them?";
-            status = "Searching";
-            foreach (HeatCopCar cop in colleagues)
+            if (!violator.IsInRange(currentpos, 500))
             {
-                if (cop.violator == this.violator)
+                msg = "UNIT: Lost sight of the suspect, does anyone see them?";
+                status = "Searching";
+                foreach (HeatCopCar cop in colleagues)
                 {
-                    if (cop.status == "Chase")
+                    if (cop.violator == this.violator)
                     {
-                        cop.msg = "UNIT: Yeah, I see them, follow me!";
-                        this.reachColleagues();
-                        this.status = "Following";
-                        return;
-                    }
-                    else
-                    {
-                        cop.msg = "UNIT: Negative, sorry";
+                        if (cop.status == "Chase")
+                        {
+                            cop.msg = "UNIT: Yeah, I see them, follow me!";
+                            this.reachColleagues();
+                            this.status = "Following";
+                            return;
+                        }
+                        else
+                        {
+                            cop.msg = "UNIT: Negative, sorry";
+                        }
                     }
                 }
+                DispatchHandler.EndPursuit(violator, colleagues, "we lost the suspect");
             }
-            DispatchHandler.EndPursuit(violator, colleagues, "we lost the suspect");
+        }
+        catch
+        {
+            msg = "Error in checking escape";
         }
     }
     private bool CheckAlive()
