@@ -253,9 +253,14 @@ public class HeatCopCar
                     msg = "WARNING: Can't apply fine, maybe you aren't Trevor, Franklin or Michael";
                 }
             }
-            this.driver.Task.ClearAllImmediately();
-            this.setStatusNormal();
-            violatorvehicle = violator.CurrentVehicle;
+            try
+            {
+                DispatchHandler.EndPursuit(violator, colleagues, "suspect is in custody");
+            }
+            catch
+            {
+                setStatusNormal();
+            }
         }
         else
         {
@@ -285,7 +290,7 @@ public class HeatCopCar
                     }
                 }
             }
-            DispatchHandler.EndPursuit(violator, colleagues);
+            DispatchHandler.EndPursuit(violator, colleagues, "we lost the suspect");
         }
     }
     private bool CheckAlive()
@@ -312,7 +317,7 @@ public class HeatCopCar
                 this.driver.Task.ChaseWithGroundVehicle(cop.driver);
                 return;
             }
-        }
+        } 
     }
 }
 
@@ -332,13 +337,23 @@ public static class DispatchHandler
             }
         }
     }
-    public static void EndPursuit (Ped violator, List<HeatCopCar> list)
+    public static void EndPursuit (Ped violator, List<HeatCopCar> list, string reason)
     {
-        GTA.UI.Notification.Show("HeatPolice Message: DISPATCH: We lost the suspect, everyone resume patrol");
-        foreach (HeatCopCar cop in list)
+        try
         {
-            if (cop.violator == violator)
-                cop.setStatusNormal();
+            GTA.UI.Notification.Show("HeatPolice Message: DISPATCH: Pursuit over, " + reason + ", everyone resume patrol");
+            foreach (HeatCopCar cop in list)
+            {
+                if (cop.violator == violator)
+                    cop.setStatusNormal();
+            }
         }
+        catch
+        {
+            GTA.UI.Notification.Show("HeatPolice Message: ERROR ENDING PURSUIT, ENDING ALL OF THEM");
+            foreach (HeatCopCar cop in list)
+            {
+                cop.setStatusNormal();
+            }
     }
 }
