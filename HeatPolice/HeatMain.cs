@@ -49,7 +49,7 @@ public class HeatPolice : Script
             if (cop.msg != "")
             {
                 //If the cop has something to say, display, then clear the notification so it doesn't keep saying it every tick
-                GTA.UI.Notification.Show("HeatPolice Message: " + cop.msg + "STATUS: " + cop.status);
+                GTA.UI.Notification.Show("HeatPolice Message: " + cop.msg + " STATUS: " + cop.status);
                 cop.msg = "";
             }
         }
@@ -67,12 +67,11 @@ public class HeatPolice : Script
         if (e.KeyCode == Keys.NumPad7)
         {
             //needs to be moved and changed based on heat.
-            HeatCopCar copCar = new HeatCopCar("c8cop");
+            HeatCopCar copCar = new HeatCopCar("formuslspd");
             HeatCopCars.Add(copCar);
         }
     }
 }
-
 public class HeatCopCar
 {
     public List<HeatCopCar> colleagues;
@@ -328,7 +327,6 @@ public class HeatCopCar
         } 
     }
 }
-
 public static class DispatchHandler
 {
     public static void DispatchCops(Ped violator, List<HeatCopCar> list)
@@ -366,3 +364,4 @@ public static class DispatchHandler
         }
     }
 }
+public class FugitveHandler { }
