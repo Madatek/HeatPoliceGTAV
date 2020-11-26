@@ -5,4 +5,3 @@ C:\Users\Madat\source\repos\HeatPolice\HeatPolice\bin\Debug\ScriptHookVDotNet3.x
 C:\Users\Madat\source\repos\HeatPolice\HeatPolice\obj\Debug\HeatPolice.csproj.CopyComplete
 C:\Users\Madat\source\repos\HeatPolice\HeatPolice\obj\Debug\HeatPolice.dll
 C:\Users\Madat\source\repos\HeatPolice\HeatPolice\obj\Debug\HeatPolice.pdb
-C:\Users\Madat\source\repos\HeatPolice\HeatPolice\obj\Debug\HeatPolice.csprojAssemblyReference.cache

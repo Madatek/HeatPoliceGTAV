@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Drawing;
 using System.Media;
-
 public class HeatPolice : Script
 {
     // Where you initialize all your variables for use.
@@ -18,7 +17,6 @@ public class HeatPolice : Script
     private List<HeatCopCar> HeatCopCars = new List<HeatCopCar>();
     private Ped playerPed = Game.Player.Character;
     private Player player = Game.Player;
-
     // Where you initialize the events or do anything when the mod starts.
     public HeatPolice()
     {
@@ -26,8 +24,11 @@ public class HeatPolice : Script
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
         Interval = 10; //milliseconds
+        while (HeatCopCars.Count < 10)
+        {
+            //add cops at random position, but on roads!
+        }
     }
-
     // This is where loops/things are run every frame.
     //This is the main OnTick, where the cop communicates with the world, for the actual action, refer in the Ontick in the HeatCopCar class
     private void OnTick(object sender, EventArgs e)
@@ -45,7 +46,6 @@ public class HeatPolice : Script
                 HeatCopCars.Remove(cop);
                 cop.msg = "";
             }
-
             if (cop.msg != "")
             {
                 //If the cop has something to say, display, then clear the notification so it doesn't keep saying it every tick
@@ -54,16 +54,14 @@ public class HeatPolice : Script
             }
         }
     }
-
     // When you press a key down or hold it.
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
        
-    }
-
-    // When you press a key up or release it.
+    }    
     private void OnKeyUp(object sender, KeyEventArgs e)
     {
+        // When you press a key up or release it.
         if (e.KeyCode == Keys.NumPad7)
         {
             //needs to be moved and changed based on heat.
@@ -74,6 +72,7 @@ public class HeatPolice : Script
 }
 public class HeatCopCar
 {
+    #region parameters and constructor
     public List<HeatCopCar> colleagues;
     public Ped driver;  //The pilot
     public Vehicle vehicle; //The car
@@ -83,7 +82,8 @@ public class HeatCopCar
     public Vector3 currentpos; //This cop's position
     public string msg = ""; //Notification message. Starts empty, as soon as something fills it, it gets displayed
     Vehicle[] aroundme = new Vehicle[30]; //Gets the vehicles near me
-    public HeatCopCar(string copcar){
+    public HeatCopCar(string copcar)
+    {
         //Constructor for the copcar, starting from the model name. Spawning, setting base properties and beginning of patrol are managed here
         this.vehicle = World.CreateVehicle(Game.GenerateHash(copcar), Game.Player.Character.Position + Game.Player.Character.ForwardVector * 20);
         this.driver = vehicle.CreateRandomPedOnSeat(VehicleSeat.Driver);
@@ -94,20 +94,19 @@ public class HeatCopCar
         this.currentpos = this.vehicle.Position;
         this.setStatusNormal();
     }
+    #endregion
+    #region functional
     public void OnTick(List<HeatCopCar> import)
-        //The pulsating heart of the script, here, at every tick, we monitor if the cop is alive, its status, and, based on many parameters, what they have to do.
     {
+        //The pulsating heart of the script, here, at every tick, we monitor if the cop is alive, its status, and, based on many parameters, what they have to do.
         colleagues = import;
-
         //if (!this.CheckAlive())
         //{
         //    //this cop has been marked for removal, leave the on tick immediately
         //    return;
         //}
-
         //Current cops' position
         this.currentpos = this.vehicle.Position;
-
         if (status == "Chase") 
             //Whenever I am chasing. Needs cleanup            
         {
@@ -120,8 +119,9 @@ public class HeatCopCar
             this.aroundme = World.GetNearbyVehicles(this.driver, 20);
             //Have I been touched?
             this.CollisionCheck();
+            //Have I found speeders?
+            this.CheckSpeed();
         }
-
         if (status == "Incoming" || status == "Following")
         {
             if (violator.IsInRange(this.currentpos, 100))
@@ -130,6 +130,40 @@ public class HeatCopCar
             }
         }
     }
+    private void Remove()
+    {
+        //If, for whatever reason, this unit needs to be deleted.
+        try
+        {
+            vehicle.MarkAsNoLongerNeeded();
+            driver.MarkAsNoLongerNeeded();
+            this.status = "Marked for Removal";
+            this.msg = "INFO: Unit successfully marked for removal.";
+        }
+        catch
+        {
+            this.status = "Marked for Removal";
+            this.msg = "WARN: Marked for Removal from game failed, will only remove from list";
+        }
+    }
+    private bool CheckAlive()
+    {
+        //Gives true if the cop is alive and the car can be driven. If false, then mark this unit for removal and forget about them
+        {
+            if (driver.IsDead || !vehicle.IsDriveable)
+            {
+                msg = "UNIT: Can't continue to operate";
+                this.Remove();
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
+    #endregion
+    #region status set
     public void setStatusNormal()
     {
         this.status = "Normal";
@@ -166,20 +200,19 @@ public class HeatCopCar
         this.status = "Chase";
         return true;
     }
-    private void Remove()
+    #endregion
+    #region pursuit start
+    private void CheckSpeed()
     {
-        //If, for whatever reason, this unit needs to be deleted.
-        try
+        foreach (Vehicle v in aroundme)
         {
-            vehicle.MarkAsNoLongerNeeded();
-            driver.MarkAsNoLongerNeeded();
-            this.status = "Marked for Removal";
-            this.msg = "INFO: Unit successfully marked for removal.";
-        }
-        catch
-        {
-            this.status = "Marked for Removal";
-            this.msg = "WARN: Marked for Removal from game failed, will only remove from list";
+            if (v.Speed > 39)
+            {
+                this.msg = "UNIT: Dispatch I have a Code 6, they're not stopping. Code 3.";
+                this.violatorvehicle = v;
+                this.violator = v.Driver;
+                this.StartChase(violator);
+            }
         }
     }
     private void CollisionCheck(){
@@ -237,6 +270,8 @@ public class HeatCopCar
             return;
         }
     }
+    #endregion
+    #region pursuit end
     private void CheckBusted()
     {
         if (violator.CurrentVehicle == null || violator.IsDead || !violatorvehicle.IsEngineRunning)
@@ -300,20 +335,8 @@ public class HeatCopCar
             msg = "Error in checking escape";
         }
     }
-    private bool CheckAlive()
-        //Gives true if the cop is alive and the car can be driven. If false, then mark this unit for removal and forget about them
-    {
-        if (driver.IsDead || !vehicle.IsDriveable)
-        {
-            msg = "UNIT: Can't continue to operate";
-            this.Remove();
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
+    #endregion
+    #region team tactics
     public void reachColleagues()
     {
         foreach (HeatCopCar cop in colleagues)
@@ -326,6 +349,7 @@ public class HeatCopCar
             }
         } 
     }
+    #endregion
 }
 public static class DispatchHandler
 {
@@ -345,6 +369,7 @@ public static class DispatchHandler
     }
     public static void EndPursuit(Ped violator, List<HeatCopCar> list, string reason)
     {
+        //When the suspect is apprehended or escapes, tell all the units on that suspect to stop pursuing
         try
         {
             GTA.UI.Notification.Show("HeatPolice Message: DISPATCH: Pursuit over, " + reason + ", everyone resume patrol");
@@ -364,4 +389,6 @@ public static class DispatchHandler
         }
     }
 }
-public class FugitveHandler { }
+public class FugitveHandler {
+
+}
